@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriGuru — Market Advisory</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-left">
+      <h1>AgriGrow</h1>
+    </div>
+    <div class="navbar-right">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="croptype.html">Types</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </nav>
+
+  <main class="content">
+    <section class="market-section">
+      <h2>Market Advisory</h2>
+      <div id="marketData" class="market-data">Loading market advisory...</div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 AgriGuru Hackathon Project</p>
+  </footer>
+
+  <script>
+    const marketData = document.getElementById("marketData");
+
+    // API base selection priority:
+    // 1. URL query param `?api=` (useful for testing)
+    // 2. Configured constant below (set to your production API)
+    // 3. Same-origin auto-detection when served from a server
+    // 4. Fallback to localhost:5000 for local backend development
+    const queryApi = new URLSearchParams(location.search).get('api');
+    const CONFIGURED_API_BASE = 'https://api.agriguru.com'; // ← set your production API here
+
+    const autoDetected = (location.hostname && location.hostname !== "")
+      ? `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`
+      : 'http://127.0.0.1:5000';
+
+    const API_BASE = queryApi && queryApi.trim()
+      ? queryApi.trim()
+      : (CONFIGURED_API_BASE && CONFIGURED_API_BASE.trim() ? CONFIGURED_API_BASE.trim() : autoDetected);
+
+    async function loadMarketAdvisory() {
+      try {
+        const url = `${API_BASE}/market`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
+        const data = await response.json();
+
+        const itemsHtml = (data.items || [])
+          .map(item => `<li><strong>${item.crop}</strong>: ${item.price} (${item.trend})</li>`)
+          .join("");
+
+        marketData.innerHTML = `
+          <p>${data.advisory || "No advisory available."}</p>
+          ${itemsHtml ? `<ul>${itemsHtml}</ul>` : ""}
+        `;
+      } catch (error) {
+        console.error("Market fetch failed:", error);
+        marketData.textContent = "Unable to load market advisory. Check that the backend is running and CORS is enabled.";
+      }
+    }
+
+    loadMarketAdvisory();
+  </script>
+
+</body>
+
+</html>
